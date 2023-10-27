@@ -174,6 +174,7 @@ cmake $SOURCEDIR                                                                
       -Dbuiltin_fftw3=OFF                                                              \
       -Dtmva-sofie=ON                                                                  \
       -Ddavix=OFF                                                                      \
+      -Dbuiltin_glew=ON                                                                \
       ${DISABLE_MYSQL:+-Dmysql=OFF}                                                    \
       ${ROOT_HAS_PYTHON:+-DPYTHON_PREFER_VERSION=3}                                    \
       ${PYTHON_EXECUTABLE:+-DPYTHON_EXECUTABLE="${PYTHON_EXECUTABLE}"}                 \

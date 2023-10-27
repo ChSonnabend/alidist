@@ -14,7 +14,7 @@ prefer_system_check: |
 rsync -a --exclude '**/.git' --delete $SOURCEDIR/ $BUILDDIR
 cd $BUILDDIR
 autoreconf -iv
-./configure --prefix=$INSTALLROOT          \
+CPPFLAGS=-D_REENTRANT ./configure --prefix=$INSTALLROOT          \
             --enable-static                \
             --disable-shared               \
             --disable-maintainer-mode      \
