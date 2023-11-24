@@ -1,6 +1,6 @@
 package: boost
-version: v1.82.0
-tag: v1.82.0
+version: v1.83.0-alice1
+tag: v1.83.0-alice1
 source: https://github.com/alisw/boost.git
 requires:
   - "GCC-Toolchain:(?!osx)"
@@ -84,10 +84,8 @@ b2 -q                                            \
    --without-graph                               \
    --without-graph_parallel                      \
    --without-locale                              \
-   --without-math                                \
    --without-mpi                                 \
    ${BOOST_NO_PYTHON:+--without-python}          \
-   --without-wave                                \
    --debug-configuration                         \
    -sNO_ZSTD=1                                   \
    ${BZ2_ROOT:+-sBZIP2_INCLUDE="$BZ2_ROOT/include"}  \
