@@ -1,6 +1,6 @@
 package: ROOT
 version: "%(tag_basename)s"
-tag: "v6-28-08-alice1"
+tag: "v6-30-01-alice2"
 source: https://github.com/alisw/root.git
 requires:
   - arrow
@@ -53,6 +53,7 @@ incremental_recipe: |
 # understand yaml.
 cat >/dev/null <<EOF
 EOF
+
 unset ROOTSYS
 COMPILER_CC=cc
 COMPILER_CXX=c++
@@ -92,29 +93,23 @@ if [[ $ALIEN_RUNTIME_VERSION ]]; then
 fi
 [[ $SYS_OPENSSL_ROOT ]] && OPENSSL_ROOT=$SYS_OPENSSL_ROOT
 
-if [[ -d $SOURCEDIR/interpreter/llvm ]]; then
-  # ROOT 6+: enable Python
-  ROOT_PYTHON_FLAGS="-Dpyroot=ON"
-  ROOT_HAS_PYTHON=1
-  python_exec=$(python3 -c 'import distutils.sysconfig; print(distutils.sysconfig.get_config_var("exec_prefix"))')/bin/python3
-  if [ "$python_exec" = "$(which python3)" ]; then
-    # By default, if there's nothing funny going on, let ROOT pick the Python in
-    # the PATH, which is the one built by us (unless disabled, in which case it
-    # is the system one). This is substituted into ROOT's Python scripts'
-    # shebang lines, so we cannot use an absolute path because the path to our
-    # Python will differ between build time and runtime, e.g. on the Grid.
-    PYTHON_EXECUTABLE=
-  else
-    # If Python's exec_prefix doesn't point to the same place as $PATH, then we
-    # have a shim script in between. This is used by things like pyenv and asdf.
-    # This doesn't happen when building things to be published, only in local
-    # usage, so hardcoding an absolute path into the shebangs is fine.
-    PYTHON_EXECUTABLE=$python_exec
-  fi
+# ROOT 6+: enable Python
+ROOT_PYTHON_FLAGS="-Dpyroot=ON"
+ROOT_HAS_PYTHON=1
+python_exec=$(python3 -c 'import distutils.sysconfig; print(distutils.sysconfig.get_config_var("exec_prefix"))')/bin/python3
+if [ "$python_exec" = "$(which python3)" ]; then
+  # By default, if there's nothing funny going on, let ROOT pick the Python in
+  # the PATH, which is the one built by us (unless disabled, in which case it
+  # is the system one). This is substituted into ROOT's Python scripts'
+  # shebang lines, so we cannot use an absolute path because the path to our
+  # Python will differ between build time and runtime, e.g. on the Grid.
+  PYTHON_EXECUTABLE=
 else
-  # Non-ROOT 6 builds: disable Python
-  ROOT_PYTHON_FLAGS="-Dpython=OFF -Dpyroot=OFF"
-  ROOT_HAS_NO_PYTHON=1
+  # If Python's exec_prefix doesn't point to the same place as $PATH, then we
+  # have a shim script in between. This is used by things like pyenv and asdf.
+  # This doesn't happen when building things to be published, only in local
+  # usage, so hardcoding an absolute path into the shebangs is fine.
+  PYTHON_EXECUTABLE=$python_exec
 fi
 
 if [ -n "$XROOTD_ROOT" ]; then
@@ -134,7 +129,6 @@ cmake $SOURCEDIR                                                                
       -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE                                             \
       -DCMAKE_INSTALL_PREFIX=$INSTALLROOT                                              \
       -Dalien=OFF                                                                      \
-      ${ALIEN_RUNTIME_REVISION:+-DMONALISA_DIR=$ALIEN_RUNTIME_ROOT}                    \
       ${CMAKE_CXX_STANDARD:+-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}}                \
       -Dfreetype=ON                                                                    \
       -Dbuiltin_freetype=OFF                                                           \
@@ -153,16 +147,20 @@ cmake $SOURCEDIR                                                                
       ${GCC_TOOLCHAIN_REVISION:+-DCMAKE_EXE_LINKER_FLAGS="-L$GCC_TOOLCHAIN_ROOT/lib64"} \
       ${OPENSSL_ROOT:+-DOPENSSL_ROOT=$OPENSSL_ROOT}                                    \
       ${OPENSSL_ROOT:+-DOPENSSL_INCLUDE_DIR=$OPENSSL_ROOT/include}                     \
+      ${OPENSSL_ROOT:+-DOPENSSL_LIBRARIES=$OPENSSL_ROOT/lib/libssl.$SONAME;$OPENSSL_ROOT/lib/libcrypto.$SONAME}  \
       ${LIBXML2_ROOT:+-DLIBXML2_ROOT=$LIBXML2_ROOT}                                    \
       ${GSL_ROOT:+-DGSL_DIR=$GSL_ROOT}                                                 \
       ${LIBPNG_ROOT:+-DPNG_INCLUDE_DIRS="${LIBPNG_ROOT}/include"}                      \
       ${LIBPNG_ROOT:+-DPNG_LIBRARY="${LIBPNG_ROOT}/lib/libpng.${SONAME}"}              \
+      ${PROTOBUF_REVISION:+-DProtobuf_DIR=${PROTOBUF_ROOT}}                            \
       ${ZLIB_ROOT:+-DZLIB_ROOT=${ZLIB_ROOT}}                                           \
       ${FFTW3_ROOT:+-DFFTW_DIR=${FFTW3_ROOT}}                                          \
       -Dfftw3=ON                                                                       \
       -Dpgsql=OFF                                                                      \
       -Dminuit2=ON                                                                     \
+      -Dpythia6=ON                                                                     \
       -Dpythia6_nolink=ON                                                              \
+      -Dmathmore=ON                                                                    \
       -Droofit=ON                                                                      \
       -Dhttp=ON                                                                        \
       -Droot7=OFF                                                                      \
@@ -170,13 +168,14 @@ cmake $SOURCEDIR                                                                
       -Dshadowpw=OFF                                                                   \
       -Dvdt=OFF                                                                        \
       -Dbuiltin_vdt=OFF                                                                \
-      ${ALIEN_RUNTIME_REVISION:+-Dmonalisa=ON}                                         \
       -Dgviz=OFF                                                                       \
       -Dbuiltin_davix=OFF                                                              \
       -Dbuiltin_afterimage=ON                                                          \
       -Dbuiltin_fftw3=OFF                                                              \
       -Dtmva-sofie=ON                                                                  \
+      -Dtmva-gpu=OFF                                                                   \
       -Ddavix=OFF                                                                      \
+      -Dunfold=ON                                                                      \
       ${USE_BUILTIN_GLEW:+-Dbuiltin_glew=ON}                                           \
       ${DISABLE_MYSQL:+-Dmysql=OFF}                                                    \
       ${ROOT_HAS_PYTHON:+-DPYTHON_PREFER_VERSION=3}                                    \
