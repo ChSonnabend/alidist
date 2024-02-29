@@ -22,23 +22,8 @@ prepend_path:
 #
 # For testing 
 #
-#   alienv enter ./module 
-#   export ALIBUILD_ARCH_PREFIX=el7-x86_64/Packages
-#   export WORK_DIR=/cvmfs/alice.cern.ch
-#   . ${PYTHONHOME}/etc/profile.d/init.sh
-#   . ${HEPMC3_ROOT}/etc/profile.d/init.sh
-#   . ${FASTJET}/etc/profile.d/init.sh
-#   export WORK_DIR=`pwd`/sw
-#   export ALIBUILD_ARCH_PREFIX=
-#   module load `pwd`/sw/slc7_x86-64/YODA/latest/etc/modulefiles/YODA 
-#   . `pwd`/sw/slc7_x86-64/YODA/latest/etc/profile.d/init.sh
-#   export WORK_DIR=
-#   aliBuild build \
-#     --disable Python-modules,boost,defaults-release,CMake,HepMC3,ROOT,YODA,cgal,fastjet \
-#     --always-prefer-system \
-#     --debug \
-#     Rivet
-# 
+#   aliBuild  -a slc7_x86-64 --docker-image registry.cern.ch/alisw/slc7-builder:latest. Rivet
+#
 rsync -a --exclude='**/.git' --delete --delete-excluded $SOURCEDIR/ ./
  
 (
@@ -66,7 +51,7 @@ if hash cgal_create_CMakeLists 2>/dev/null && test x\$CGAL_ROOT = x ; then
    CGAL_ROOT=\$(dirname \$(dirname \`command -v cgal_create_CMakeLists\`))
 fi
 if test x\$GMP_ROOT = x ; then
-   GMP_ROOT=\$(dirname \`echo \$LD_LIBRARY_PATH| tr ':' '\n' | grep cgal\` 2>/dev/null)
+   GMP_ROOT=\$(dirname \`echo \$LD_LIBRARY_PATH| tr ':' '\n' | grep GMP\` 2>/dev/null)
    if test x\$GMP_ROOT = x ; then
       GMP_ROOT=/usr
    fi
@@ -106,7 +91,7 @@ case $ARCHITECTURE in
 		    --with-hepmc3="$HEPMC3_ROOT"       			\
 		    --with-fastjet="$FASTJET_ROOT"     			\
 		    LDFLAGS="${LOCAL_LDFLAGS}"                          \
-		    CYTHON="$PYTHON_MODULES_ROOT/share/python-modules/bin/cython"
+		    CYTHON="$PYTHON_MODULES_ROOT/bin/cython"
   ;;
 esac
 
@@ -121,6 +106,7 @@ chmod 0755 bin/rivet-build
 cat pyext/build.py | sed -e 's,-L/usr/lib[^ /"]*,,g' > pyext/build.py.0
 mv pyext/build.py pyext/build.py.orig
 mv pyext/build.py.0 pyext/build.py
+# Make pyext/build.py executable
 chmod 0755 pyext/build.py
 # Now build 
 make -j$JOBS
@@ -140,9 +126,37 @@ SED_EXPR="s!x!x!"  # noop
 for P in $REQUIRES $BUILD_REQUIRES; do
   UPPER=$(echo $P | tr '[:lower:]' '[:upper:]' | tr '-' '_')
   EXPAND=$(eval echo \$${UPPER}_ROOT)
+  if test "x$EXPAND" = "x" ; then
+      echo "Environment variable ${UPPER}_ROOT not set"
+  fi
   [[ $EXPAND ]] || continue
+  echo "Environment says ${UPPER} is at ${EXPAND}"
   SED_EXPR="$SED_EXPR; s!$EXPAND!\$${UPPER}_ROOT!g"
 done
+# Special handling for broken FastJet configuration script
+#
+# Doesn't seem like fastjet-config reports GMP directly, so we will
+# need to keep the GMP part. 
+#
+# This seems to have been fixed in fastjet.sh (same PR), but I leave
+# it in for now - case something _is_ broken or we built against an
+# older fastjet
+FJ_CGAL_ROOT=$(fastjet-config --libs| \
+                   tr ' ' '\n' | \
+                   grep cgal | \
+                   sed -n -e 's!-L\(.*\)/lib!\1!p')
+FJ_GMP_ROOT=$(fastjet-config --libs| \
+                   tr ' ' '\n' | \
+                   grep GMP | \
+                   sed -n -e 's!-L\(.*\)/lib!\1!p')
+if test x$FJ_CGAL_ROOT != x ; then
+    echo "FastJet reports CGal to be at ${FJ_CGAL_ROOT}"
+    SED_EXPR="$SED_EXPR; s!$FJ_CGAL_ROOT!\$CGAL_ROOT!g"
+fi
+if test x$FJ_GMP_ROOT != x ; then
+    echo "FastJet reports GMP to be at ${FJ_GMP_ROOT}"
+    SED_EXPR="$SED_EXPR; s!$FJ_GMP_ROOT!\$GMP_ROOT!g"
+fi
 
 # Create line to source 3rdparty.sh to be inserted into 
 # rivet-config and rivet-build 
@@ -150,12 +164,18 @@ cat << EOF > source3rd
 test -f \$prefix/etc/rivet_3rdparty.sh && source \$prefix/etc/rivet_3rdparty.sh
 EOF
 
+# Make back-up of original for debugging - disable execute bit
+cp $INSTALLROOT/bin/rivet-config $INSTALLROOT/bin/rivet-config.orig
+chmod 644 $INSTALLROOT/bin/rivet-config.orig
 # Modify rivet-config script to use environment from rivet_3rdparty.sh
 cat $INSTALLROOT/bin/rivet-config | sed -e "$SED_EXPR" > $INSTALLROOT/bin/rivet-config.0
 csplit $INSTALLROOT/bin/rivet-config.0 '/^datarootdir=/+1'
 cat xx00 source3rd xx01 >  $INSTALLROOT/bin/rivet-config
 chmod 0755 $INSTALLROOT/bin/rivet-config
 
+# Make back-up of original for debugging - disable execute bit
+cp $INSTALLROOT/bin/rivet-build $INSTALLROOT/bin/rivet-build.orig
+chmod 644 $INSTALLROOT/bin/rivet-build.orig
 # Modify rivet-build script to use environment from rivet_3rdparty.sh.  
 cat $INSTALLROOT/bin/rivet-build | sed -e  "$SED_EXPR" > $INSTALLROOT/bin/rivet-build.0
 csplit $INSTALLROOT/bin/rivet-build.0 '/^datarootdir=/+1'
@@ -230,3 +250,9 @@ set Extra_RivetTEXINPUTS \$RIVET_ROOT/share/Rivet/texmf/tex//
 setenv TEXINPUTS  \$Old_TEXINPUTS:\$Extra_RivetTEXINPUTS
 setenv LATEXINPUTS \$Old_TEXINPUTS:\$Extra_RivetTEXINPUTS
 EoF
+
+
+#
+# EOF
+#
+
