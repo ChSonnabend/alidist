@@ -17,7 +17,7 @@ prepend_path:
 # works inside and outside a virtualenv, but unset VIRTUAL_ENV to make sure we
 # only depend on stuff we installed using our Python and Python-modules.
 unset VIRTUAL_ENV
-python3 -m pip install torch --force-reinstall \
+python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu --force-reinstall \
         --target="$INSTALLROOT/lib/python/site-packages"
 
 # Make sure all the tools use the correct python
