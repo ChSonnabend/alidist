@@ -10,11 +10,15 @@ prepend_path:
 ---
 
 case $ARCHITECTURE in
-  *_x86-64) URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.2.1.zip
+  osx_*)
+    if [[ $ARCHITECTURE == *_x86-64 ]]; then
+      URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.2.1.zip
+    else
+      URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.1.zip
+    fi
   ;;
-  *_arm64) URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.1.zip
-  ;;
-  *) URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcpu.zip
+  *)
+    URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcpu.zip
   ;;
 esac
 
