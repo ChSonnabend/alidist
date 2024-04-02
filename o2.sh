@@ -28,6 +28,7 @@ requires:
   - MLModels
   - KFParticle
   - RapidJSON
+  - PyTorch
 build_requires:
   - abseil
   - GMP
