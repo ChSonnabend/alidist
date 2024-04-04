@@ -155,6 +155,11 @@ case $ARCHITECTURE in
   ;;
 esac
 
+# This is needed for the PyTorch installation
+if command -v rocminfo >/dev/null 2>&1; then
+    export PYTORCH_ROCM_ARCH=gfx906
+    export USE_ROCM=1
+
 # This affects only PR checkers
 if [[ $ALIBUILD_O2_TESTS ]]; then
   # Impose extra errors.

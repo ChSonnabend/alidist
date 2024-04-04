@@ -9,10 +9,6 @@ prepend_path:
   CMAKE_PREFIX_PATH: "$PYTORCH_ROOT/share/cmake"
 ---
 
-export PYTORCH_ROCM_ARCH=gfx906
-export USE_ROCM=1
-# URL=https://download.pytorch.org/libtorch/rocm5.2/libtorch-cxx11-abi-shared-with-deps-1.13.0%2Brocm5.2.zip
-
 case $ARCHITECTURE in
   osx_*)
     if [[ $ARCHITECTURE == *_x86-64 ]]; then
@@ -26,8 +22,6 @@ case $ARCHITECTURE in
   *)
     if command -v rocminfo >/dev/null 2>&1; then
       echo "Installing PyTorch for ROCm"
-      export PYTORCH_ROCM_ARCH=gfx906
-      export USE_ROCM=1
       URL=https://download.pytorch.org/libtorch/rocm5.2/libtorch-cxx11-abi-shared-with-deps-1.13.0%2Brocm5.2.zip
     elif command -v nvcc >/dev/null 2>&1; then
       CUDA_VERSION=$(nvcc --version | grep "release" | awk '{print $NF}' | cut -d. -f1)
