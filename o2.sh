@@ -1,6 +1,6 @@
 package: O2
 version: "%(tag_basename)s"
-tag: "daily-20240312-0130"
+tag: "daily-20240404-0200"
 requires:
   - arrow
   - FairRoot
@@ -97,7 +97,7 @@ incremental_recipe: |
     find $PWD -name "*.root" -delete
     rm -rf test_logs
     TESTERR=
-    ctest -C ${CMAKE_BUILD_TYPE} -E "(test_Framework)|(test_GPUsort(CUDA|HIP))" --output-on-failure ${JOBS+-j $JOBS} || TESTERR=$?
+    ctest -C ${CMAKE_BUILD_TYPE} -E "test_Framework" --output-on-failure ${JOBS+-j $JOBS} || TESTERR=$?
     ctest -C ${CMAKE_BUILD_TYPE} -R test_Framework --output-on-failure || TESTERR=$?
     # Display additional logs for tests that timed out in a non-fatal way
     set +x
