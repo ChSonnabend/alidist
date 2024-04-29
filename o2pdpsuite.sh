@@ -1,6 +1,6 @@
 package: O2PDPSuite
 version: "%(tag_basename)s"
-tag: "daily-20240404-0200"
+tag: "daily-20240429-0200"
 requires:
   # List important packages separately, even though they're also
   # pulled in by O2sim, so they show up in the dependency list on Monalisa.
@@ -15,6 +15,7 @@ valid_defaults:
   - o2
   - o2-dataflow
   - o2-epn
+  - ali
 ---
 #!/bin/bash -ex
 
