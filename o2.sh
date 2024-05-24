@@ -1,6 +1,6 @@
 package: O2
 version: "%(tag_basename)s"
-tag: "daily-20240404-0200"
+tag: "daily-20240524-0200"
 requires:
   - arrow
   - FairRoot
@@ -132,6 +132,7 @@ valid_defaults:
   - o2-dev-fairroot
   - alo
   - o2-prod
+  - ali
 ---
 #!/bin/sh
 export ROOTSYS=$ROOT_ROOT
