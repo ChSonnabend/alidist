@@ -1,6 +1,6 @@
 package: PyTorch
 version: "%(tag_basename)s"
-tag: "1.13.0"
+tag: "2.2.1"
 build_requires:
   - alibuild-recipe-tools
   - curl:(?!osx)
@@ -22,7 +22,7 @@ case $ARCHITECTURE in
   *)
     if command -v rocminfo >/dev/null 2>&1; then
       echo "Installing PyTorch for ROCm"
-      URL=https://download.pytorch.org/libtorch/rocm5.2/libtorch-cxx11-abi-shared-with-deps-1.13.0%2Brocm5.2.zip
+      URL=https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Brocm6.0.zip
     elif command -v nvcc >/dev/null 2>&1; then
       CUDA_VERSION=$(nvcc --version | grep "release" | awk '{print $NF}' | cut -d. -f1)
       if [[ "$CUDA_VERSION" == "V11" ]]; then
