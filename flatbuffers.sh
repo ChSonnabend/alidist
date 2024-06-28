@@ -1,5 +1,5 @@
 package: flatbuffers
-version: v24.3.25
+version: v23.5.26
 source: https://github.com/google/flatbuffers
 requires:
   - zlib
@@ -14,7 +14,8 @@ cmake "$SOURCEDIR"                                                              
       -DFLATBUFFERS_BUILD_TESTS=OFF                                                                                     \
       -DCMAKE_INSTALL_PREFIX="$INSTALLROOT"                                                                          
 
-cmake --build . -- ${JOBS:+-j$JOBS} install
+make ${JOBS:+-j $JOBS}
+make install
 
 # Modulefile
 mkdir -p "$INSTALLROOT/etc/modulefiles"

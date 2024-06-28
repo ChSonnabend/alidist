@@ -1,6 +1,6 @@
 package: ONNXRuntime
 version: "%(tag_basename)s"
-tag: v1.18.0
+tag: main
 source: https://github.com/microsoft/onnxruntime
 requires:
   - protobuf
@@ -15,6 +15,8 @@ build_requires:
 #!/bin/bash -e
 
 mkdir -p $INSTALLROOT
+export GPU_TARGETS=gfx906
+export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
 
 cmake "$SOURCEDIR/cmake"                                                              \
       -DCMAKE_INSTALL_PREFIX=$INSTALLROOT                                             \
@@ -24,6 +26,11 @@ cmake "$SOURCEDIR/cmake"                                                        
       -Donnxruntime_BUILD_UNIT_TESTS=OFF                                              \
       -Donnxruntime_PREFER_SYSTEM_LIB=ON                                              \
       -Donnxruntime_BUILD_SHARED_LIB=ON                                               \
+      -Donnxruntime_USE_ROCM=ON                                                       \
+      -Donnxruntime_CUDA_MINIMAL=ON                                                   \
+      -Donnxruntime_ROCM_HOME=/opt/rocm                                         \
+      -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++                           \
+      -D__HIP_PLATFORM_AMD__=1                                   \
       -DProtobuf_USE_STATIC_LIBS=ON                                                   \
       ${PROTOBUF_ROOT:+-DProtobuf_LIBRARY=$PROTOBUF_ROOT/lib/libprotobuf.a}           \
       ${PROTOBUF_ROOT:+-DProtobuf_LITE_LIBRARY=$PROTOBUF_ROOT/lib/libprotobuf-lite.a} \
