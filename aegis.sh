@@ -1,6 +1,6 @@
 package: AEGIS
 version: "%(tag_basename)s"
-tag: v1.5.2
+tag: v1.5.3-alice2
 requires:
   - ROOT
   - VMC
@@ -25,7 +25,8 @@ cmake $SOURCEDIR -DCMAKE_CXX_FLAGS=-isystem\ "/opt/homebrew/include" \
                  -DCMAKE_INSTALL_PREFIX=$INSTALLROOT       \
                  ${CMAKE_GENERATOR:+-G "$CMAKE_GENERATOR"} \
                  -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE      \
-                 -DCMAKE_SKIP_RPATH=TRUE \
+                 -DCMAKE_SKIP_RPATH=TRUE                   \
+                 -DPYTHIA6_DIR=${PYTHIA6_ROOT}             \
 		 ${SPECIALFFLAGS:+-DCMAKE_Fortran_FLAGS="-fallow-argument-mismatch"}
 cmake --build . -- ${JOBS:+-j$JOBS} install
 

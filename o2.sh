@@ -1,7 +1,8 @@
 package: O2
 version: "%(tag_basename)s"
-tag: "daily-20240524-0200"
+tag: "daily-20240705-0200"
 requires:
+  - abseil
   - arrow
   - FairRoot
   - Vc
@@ -28,6 +29,7 @@ requires:
   - MLModels
   - KFParticle
   - RapidJSON
+  - bookkeeping-api
 build_requires:
   - abseil
   - GMP
