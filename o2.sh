@@ -1,6 +1,6 @@
 package: O2
 version: "%(tag_basename)s"
-tag: "daily-20240701-0200"
+tag: "daily-20240708-0200"
 requires:
   - abseil
   - arrow
@@ -30,6 +30,7 @@ requires:
   - KFParticle
   - RapidJSON
   - PyTorch
+  - bookkeeping-api
 build_requires:
   - abseil
   - GMP
