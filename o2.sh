@@ -45,7 +45,7 @@ prepend_path:
   ROOT_INCLUDE_PATH: "$O2_ROOT/include:$O2_ROOT/include/GPU"
 incremental_recipe: |
   unset DYLD_LIBRARY_PATH
-  export CMAKE_BUILD_TYPE=THREADSANITIZER
+  # export CMAKE_BUILD_TYPE=THREADSANITIZER
   if [[ ! $CMAKE_GENERATOR && $DISABLE_NINJA != 1 && $DEVEL_SOURCES != $SOURCEDIR ]]; then
     NINJA_BIN=ninja-build
     type "$NINJA_BIN" &> /dev/null || NINJA_BIN=ninja
@@ -179,7 +179,7 @@ if [[ ! $CMAKE_GENERATOR && $DISABLE_NINJA != 1 && $DEVEL_SOURCES != $SOURCEDIR 
 fi
 
 unset DYLD_LIBRARY_PATH
-export CMAKE_BUILD_TYPE=THREADSANITIZER
+# export CMAKE_BUILD_TYPE=THREADSANITIZER
 cmake $SOURCEDIR -DCMAKE_INSTALL_PREFIX=$INSTALLROOT                                                      \
       ${CMAKE_GENERATOR:+-G "$CMAKE_GENERATOR"}                                                           \
       ${CMAKE_BUILD_TYPE:+-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE}                                           \
