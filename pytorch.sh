@@ -1,6 +1,6 @@
 package: PyTorch
 version: "%(tag_basename)s"
-tag: "2.2.1"
+tag: "2.3.0"
 build_requires:
   - alibuild-recipe-tools
   - curl:(?!osx)
@@ -13,10 +13,10 @@ case $ARCHITECTURE in
   osx_*)
     if [[ $ARCHITECTURE == *_x86-64 ]]; then
       echo "Installing PyTorch for MacOS (CPU version)"
-      URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.2.1.zip
+      URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-x86_64-2.3.0.zip
     else
       echo "Installing PyTorch for MacOS (Metal backend)"
-      URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.2.1.zip
+      URL=https://download.pytorch.org/libtorch/cpu/libtorch-macos-arm64-2.3.0.zip
     fi
   ;;
   *)
@@ -27,17 +27,17 @@ case $ARCHITECTURE in
       CUDA_VERSION=$(nvcc --version | grep "release" | awk '{print $NF}' | cut -d. -f1)
       if [[ "$CUDA_VERSION" == "V11" ]]; then
         echo "Installing PyTorch for CUDA 11.x"
-        URL=https://download.pytorch.org/libtorch/cu118/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcu118.zip
+        URL=https://download.pytorch.org/libtorch/cu118/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcu118.zip
       elif [[ "$CUDA_VERSION" == "V12" ]]; then
         echo "Installing PyTorch for CUDA 12.x"
-        URL=https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcu121.zip
+        URL=https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcu121.zip
       else
         echo "CUDA version is not 11.x or 12.x, installing PyTorch basic CPU version"
-        URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcpu.zip
+        URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip
       fi
     else
       echo "Installing PyTorch basic CPU version"
-      URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.2.1%2Bcpu.zip
+      URL=https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.3.0%2Bcpu.zip
     fi
   ;;
 esac
