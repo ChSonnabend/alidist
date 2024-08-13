@@ -10,6 +10,7 @@ env:
 disable:
   - mesos
   - MySQL
+  - arrow
 overrides:
   AliPhysics:
     version: '%(commit_hash)s_O2'
@@ -24,6 +25,8 @@ overrides:
       - Vc
       - ZeroMQ
       - JAliEn-ROOT
+  vgm:
+    tag: "v5-2"
   GCC-Toolchain:
     version: v12.2.0-alice1
     tag: v12.2.0-alice1

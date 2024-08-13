@@ -1,6 +1,6 @@
 package: JAliEn-ROOT
 version: "%(tag_basename)s"
-tag: "0.7.10"
+tag: "0.7.14"
 source: https://gitlab.cern.ch/jalien/jalien-root.git
 requires:
   - ROOT
@@ -56,7 +56,7 @@ cmake --build . -- ${JOBS:+-j $JOBS} install
 
 # Modulefile
 mkdir -p etc/modulefiles
-alibuild-generate-module --lib > "etc/modulefiles/$PKGNAME"
+alibuild-generate-module --lib --cmake > "etc/modulefiles/$PKGNAME"
 cat >> "etc/modulefiles/$PKGNAME" <<EoF
 # Our environment
 append-path ROOT_PLUGIN_PATH \$PKG_ROOT/etc/plugins
