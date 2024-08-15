@@ -18,7 +18,7 @@ prepend_path:
 #!/bin/bash -e
 
 mkdir -p $INSTALLROOT
-export GPU_TARGETS=gfx906
+export GPU_TARGETS=gfx906,gfx908
 export GIT_DISCOVERY_ACROSS_FILESYSTEM=1
 
 cmake "$SOURCEDIR/cmake"                                                              \
@@ -35,6 +35,8 @@ cmake "$SOURCEDIR/cmake"                                                        
       -D__HIP_PLATFORM_AMD__=1                                                        \
       -DCMAKE_HIP_ARCHITECTURES=gfx906,gfx908                                         \
       -Donnxruntime_USE_COMPOSABLE_KERNEL=OFF                                         \
+      -Donnxruntime_USE_ROCBLAS_EXTENSION_API=ON                                      \
+      -Donnxruntime_USE_COMPOSABLE_KERNEL_CK_TILE=ON                                  \
       -Donnxruntime_ENABLE_TRAINING=OFF                                               \
       -DProtobuf_USE_STATIC_LIBS=ON                                                   \
       -Donnxruntime_DISABLE_RTTI=OFF                                                  \
