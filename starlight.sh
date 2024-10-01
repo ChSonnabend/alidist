@@ -1,11 +1,12 @@
 package: STARlight
 version: "20240617"
-tag: 196adef
+tag: 196adefb9b840587d374b675e288b2a98fb5df0e
 requires:
   - HepMC3
 build_requires:
   - CMake
   - "GCC-Toolchain:(?!osx)"
+  - alibuild-recipe-tools
 source: https://github.com/STARlightsim/STARlight.git
 ---
 #!/bin/bash -ex
