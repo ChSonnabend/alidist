@@ -54,7 +54,7 @@ if ( [[ "$ALIBUILD_O2_FORCE_GPU" -eq 1 ]] || [[ "$ALIBUILD_ENABLE_CUDA" -eq 1 ]]
   [[ -z "$ORT_CUDA_BUILD" ]] ) ) && \
   [[ "$ORT_ROCM_BUILD" -eq 0 ]]; then
     ORT_CUDA_BUILD="1"
-    : ${ALIBUILD_O2_OVERRIDE_CUDA_ARCHS:="89"}
+    : ${ALIBUILD_O2_OVERRIDE_CUDA_ARCHS:="86"}
 else
   ORT_CUDA_BUILD="0"
 fi
