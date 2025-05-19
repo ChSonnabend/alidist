@@ -10,8 +10,8 @@ requires:
   - lhapdf-pdfsets
   - JETSCAPE
   - CRMC
-  - EPOS4
-  - EPOS4HQ
+  - EPOS4:(?!.*aarch64)
+  - EPOS4HQ:(?!.*aarch64)
   - EVTGEN:(?!osx)
   - STARlight:(?!osx)
   - Upcgen:(?!osx)
