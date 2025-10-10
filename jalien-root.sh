@@ -1,6 +1,6 @@
 package: JAliEn-ROOT
 version: "%(tag_basename)s"
-tag: "0.7.14"
+tag: "0.7.15"
 source: https://gitlab.cern.ch/jalien/jalien-root.git
 requires:
   - ROOT
@@ -34,7 +34,7 @@ esac
 ALIBUILD_CMAKE_BUILD_DIR=$SOURCEDIR
 if [ ! -f "$JALIEN_ROOT_ROOT/cmake/modules/FindAliceGridUtils.cmake" ]; then
   ALIBUILD_CMAKE_BUILD_DIR="$BUILDDIR"
-  rsync -a --exclude '**/.git' --delete "$SOURCEDIR/" "$BUILDDIR"
+  rsync -a --exclude .git --delete --delete-excluded "$SOURCEDIR/" "$BUILDDIR"
   rsync -a "$ALICE_GRID_UTILS_ROOT/include/" "$BUILDDIR/inc"
 fi
 

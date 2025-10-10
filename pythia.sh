@@ -1,7 +1,7 @@
 package: pythia
 version: "%(tag_basename)s"
-tag: v8311
-source: https://github.com/alisw/pythia8
+tag: v8315-alice1
+source: https://github.com/alisw/pythia8.git
 requires:
   - lhapdf
   - HepMC
@@ -11,7 +11,7 @@ env:
   PYTHIA8: "$PYTHIA_ROOT"
 ---
 #!/bin/bash -e
-rsync -a $SOURCEDIR/ ./
+rsync -a --chmod=ug=rwX --delete --exclude '**/.git' --delete-excluded $SOURCEDIR/ ./
 case $ARCHITECTURE in
   osx*)
     # If we preferred system tools, we need to make sure we can pick them up.

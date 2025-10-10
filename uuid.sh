@@ -1,6 +1,6 @@
 package: UUID
 version: v2.27.1
-tag: alice/v2.27.1
+tag: v2.27.1-alice1
 source: https://github.com/alisw/uuid
 build_requires:
   - "GCC-Toolchain:(?!osx)"
@@ -8,7 +8,7 @@ build_requires:
 prepend_path:
   PKG_CONFIG_PATH: "$UUID_ROOT/share/pkgconfig"
 ---
-rsync -av --delete --exclude '**/.git' "$SOURCEDIR/" .
+rsync --no-specials --no-devices --chmod=ug=rwX -av --delete --exclude .git/ --delete-excluded "$SOURCEDIR/" .
 if [[ $AUTOTOOLS_ROOT == "" ]]  && which brew >/dev/null; then
   PATH=$PATH:$(brew --prefix gettext)/bin
 fi
@@ -20,7 +20,8 @@ case $ARCHITECTURE in
   *) disable_shared= ;;
 esac
 
-autoreconf -ivf
+# Avoid building docs
+GTKDOCIZE=echo autoreconf -ivf
 # --disable-nls so we don't depend on gettext/libintl at runtime on Intel Macs.
 ./configure ${disable_shared:+--disable-shared}   \
             "--libdir=$INSTALLROOT/lib"           \

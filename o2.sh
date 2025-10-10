@@ -1,6 +1,6 @@
 package: O2
 version: "%(tag_basename)s"
-tag: "daily-20250319-0000"
+tag: "daily-20251010-0000"
 requires:
   - abseil
   - arrow
@@ -26,11 +26,12 @@ requires:
   - "VecGeom:(?!osx.*)"
   - FFTW3
   - ONNXRuntime
+  - nlohmann_json
   - MLModels
-  - KFParticle
   - RapidJSON
   - bookkeeping-api
   - AliEn-CAs
+  - gpu-system
 build_requires:
   - abseil
   - GMP
@@ -64,6 +65,14 @@ incremental_recipe: |
     # FIXME: this breaks some corner cases, apparently...
     # cat old.txt old.txt new.txt | sort | uniq -c | grep " 2 " | sed -e's|[ ][ ]*2 ||' | xargs rm -f
   fi
+
+  if [[ -f $GPU_SYSTEM_ROOT/etc/gpu-features-available.sh ]]; then
+    source $GPU_SYSTEM_ROOT/etc/gpu-features-available.sh
+  fi
+  if [[ -n $ONNXRUNTIME_REVISION ]]; then
+    source $ONNXRUNTIME_ROOT/etc/ort-init.sh
+  fi
+
   cmake --build . -- ${JOBS:+-j$JOBS} install
   mkdir -p $INSTALLROOT/etc/modulefiles && rsync -a --delete etc/modulefiles/ $INSTALLROOT/etc/modulefiles
   # install the compilation database so that we can post-check the code
@@ -113,6 +122,15 @@ incremental_recipe: |
     set -x
     [[ ! $TESTERR ]] || exit 1
   fi
+
+  if [[ -n "$ALIBUILD_CONFIG_DIR" && -f "$ALIBUILD_CONFIG_DIR/resources/FindO2GPU.cmake" ]] && \
+    ! cmp -s "$ALIBUILD_CONFIG_DIR/resources/FindO2GPU.cmake" "$SOURCEDIR/dependencies/FindO2GPU.cmake" && \
+    [[ ! $(grep "# FindO2GPU.cmake Version " "$ALIBUILD_CONFIG_DIR/resources/FindO2GPU.cmake" | awk '{print $4}') -gt \
+      $(grep "# FindO2GPU.cmake Version " "$SOURCEDIR/dependencies/FindO2GPU.cmake" | awk '{print $4}') ]]; then
+    echo "FindO2GPU.cmake differs in O2 compared to alidist"
+    exit 1
+  fi
+
   # Create code coverage information to be uploaded
   # by the calling driver to codecov.io or similar service
   if [[ $CMAKE_BUILD_TYPE == COVERAGE ]]; then
@@ -128,6 +146,11 @@ incremental_recipe: |
     perl -p -i -e "s|^[0-9]+/||g" coverage.info # Remove PR location path
     lcov --list coverage.info
   fi
+
+  if [[ ( "$ALIBOT_PR_REPO" == "AliceO2Group/AliceO2" || "$ALIBOT_PR_REPO" == "alisw/alidist" ) && $ALIBUILD_O2_FORCE_GPU == 1 ]]; then
+    GPUCA_STANDALONE_CI=1 $SOURCEDIR/GPU/GPUTracking/Standalone/cmake/build.sh $SOURCEDIR
+  fi
+
 valid_defaults:
   - o2
   - o2-dataflow
@@ -139,6 +162,13 @@ valid_defaults:
 ---
 #!/bin/sh
 export ROOTSYS=$ROOT_ROOT
+
+if [[ -f $GPU_SYSTEM_ROOT/etc/gpu-features-available.sh ]]; then
+  source $GPU_SYSTEM_ROOT/etc/gpu-features-available.sh
+fi
+if [[ -n $ONNXRUNTIME_REVISION ]]; then
+  source $ONNXRUNTIME_ROOT/etc/ort-init.sh
+fi
 
 # Making sure people do not have SIMPATH set when they build fairroot.
 # Unfortunately SIMPATH seems to be hardcoded in a bunch of places in
@@ -191,13 +221,12 @@ cmake $SOURCEDIR -DCMAKE_INSTALL_PREFIX=$INSTALLROOT                            
       ${LIBJALIENO2_ROOT:+-DlibjalienO2_ROOT=$LIBJALIENO2_ROOT}                                           \
       ${XROOTD_REVISION:+-DXROOTD_DIR=$XROOTD_ROOT}                                                       \
       ${JALIEN_ROOT_REVISION:+-DJALIEN_ROOT_ROOT=$JALIEN_ROOT_ROOT}                                       \
-      ${ALIBUILD_O2_FORCE_GPU:+-DENABLE_CUDA=ON -DENABLE_HIP=ON -DENABLE_OPENCL=ON}                       \
-      ${ALIBUILD_O2_FORCE_GPU:+-DHIP_AMDGPUTARGET=default -DCUDA_COMPUTETARGET=default}                   \
-      ${DISABLE_GPU:+-DENABLE_CUDA=OFF -DENABLE_HIP=OFF -DENABLE_OPENCL=OFF}                              \
-      ${ALIBUILD_ENABLE_CUDA:+-DENABLE_CUDA=ON}                                                           \
-      ${ALIBUILD_ENABLE_HIP:+-DENABLE_HIP=ON}                                                             \
-      ${ALIBUILD_O2_OVERRIDE_HIP_ARCHS:+-DHIP_AMDGPUTARGET=${ALIBUILD_O2_OVERRIDE_HIP_ARCHS}}             \
-      ${ALIBUILD_O2_OVERRIDE_CUDA_ARCHS:+-DCUDA_COMPUTETARGET=${ALIBUILD_O2_OVERRIDE_CUDA_ARCHS}}         \
+      ${GPUCA_BUILD_EVENT_DISPLAY:+-GPUCA_BUILD_EVENT_DISPLAY=${GPUCA_BUILD_EVENT_DISPLAY}}               \
+      -DENABLE_CUDA="${O2_GPU_CUDA_AVAILABLE:-AUTO}"                                                      \
+      -DENABLE_HIP="${O2_GPU_ROCM_AVAILABLE:-AUTO}"                                                       \
+      -DENABLE_OPENCL="${O2_GPU_OPENCL_AVAILABLE:-AUTO}"                                                  \
+      ${O2_GPU_ROCM_AVAILABLE_ARCH:+-DHIP_AMDGPUTARGET="${O2_GPU_ROCM_AVAILABLE_ARCH}"}                   \
+      ${O2_GPU_CUDA_AVAILABLE_ARCH:+-DCUDA_COMPUTETARGET="${O2_GPU_CUDA_AVAILABLE_ARCH}"}                 \
       ${CURL_ROOT:+-DCURL_ROOT=$CURL_ROOT}                                                                \
       ${LIBUV_ROOT:+-DLibUV_ROOT=$LIBUV_ROOT}                                                             \
       ${BUILD_ANALYSIS:+-DBUILD_ANALYSIS=$BUILD_ANALYSIS}                                                 \
@@ -208,7 +237,11 @@ cmake $SOURCEDIR -DCMAKE_INSTALL_PREFIX=$INSTALLROOT                            
       ${ARROW_ROOT:+-DArrow_DIR=$ARROW_ROOT/lib/cmake/Arrow}                                              \
       ${CLANG_REVISION:+-DCLANG_EXECUTABLE="$CLANG_ROOT/bin-safe/clang"}                                  \
       ${CLANG_REVISION:+-DLLVM_LINK_EXECUTABLE="$CLANG_ROOT/bin/llvm-link"}                               \
-      ${ITSRESPONSE_ROOT:+-DITSRESPONSE=${ITSRESPONSE_ROOT}}
+      ${ITSRESPONSE_ROOT:+-DITSRESPONSE=${ITSRESPONSE_ROOT}}                                              \
+      ${ORT_ROCM_BUILD:+-DORT_ROCM_BUILD=${ORT_ROCM_BUILD}}                                               \
+      ${ORT_CUDA_BUILD:+-DORT_CUDA_BUILD=${ORT_CUDA_BUILD}}                                               \
+      ${ORT_MIGRAPHX_BUILD:+-DORT_MIGRAPHX_BUILD=${ORT_MIGRAPHX_BUILD}}                                   \
+      ${ORT_TENSORRT_BUILD:+-DORT_TENSORRT_BUILD=${ORT_TENSORRT_BUILD}}
 # LLVM_ROOT is required for Gandiva
 
 cmake --build . -- ${JOBS+-j $JOBS} install
@@ -225,6 +258,10 @@ DEVEL_SOURCES="`readlink $SOURCEDIR || echo $SOURCEDIR`"
 if [ "$DEVEL_SOURCES" != "$SOURCEDIR" ]; then
   perl -p -i -e "s|$SOURCEDIR|$DEVEL_SOURCES|" compile_commands.json
   ln -sf $BUILDDIR/compile_commands.json $DEVEL_SOURCES/compile_commands.json
+fi
+
+if [[ ( "$ALIBOT_PR_REPO" == "AliceO2Group/AliceO2" || "$ALIBOT_PR_REPO" == "alisw/alidist" ) && $ALIBUILD_O2_FORCE_GPU == 1 ]]; then
+  GPUCA_STANDALONE_CI=1  $SOURCEDIR/GPU/GPUTracking/Standalone/cmake/build.sh $SOURCEDIR
 fi
 
 # Modulefile
@@ -264,6 +301,7 @@ module load BASE/1.0 \\
             ${FFTW3_REVISION:+FFTW3/$FFTW3_VERSION-$FFTW3_REVISION}                                 \\
             ${ONNXRUNTIME_REVISION:+ONNXRuntime/$ONNXRUNTIME_VERSION-$ONNXRUNTIME_REVISION}         \\
             ${RAPIDJSON_REVISION:+RapidJSON/$RAPIDJSON_VERSION-$RAPIDJSON_REVISION}                 \\
+            ${NLOHMANN_JSON_REVISION:+nlohmann_json/$NLOHMANN_JSON_VERSION-$NLOHMANN_JSON_REVISION} \\
             ${MLMODELS_REVISION:+MLModels/$MLMODELS_VERSION-$MLMODELS_REVISION}                     \\
             ${BOOKKEEPING_API_REVISION:+bookkeeping-api/$BOOKKEEPING_API_VERSION-$BOOKKEEPING_API_REVISION}
 
@@ -311,6 +349,14 @@ if [[ $ALIBUILD_O2_TESTS ]]; then
   done
   set -x
   [[ ! $TESTERR ]] || exit 1
+fi
+
+if [[ -n "$ALIBUILD_CONFIG_DIR" && -f "$ALIBUILD_CONFIG_DIR/resources/FindO2GPU.cmake" ]] && \
+  ! cmp -s "$ALIBUILD_CONFIG_DIR/resources/FindO2GPU.cmake" "$SOURCEDIR/dependencies/FindO2GPU.cmake" && \
+  [[ ! $(grep "# FindO2GPU.cmake Version " "$ALIBUILD_CONFIG_DIR/resources/FindO2GPU.cmake" | awk '{print $4}') -gt \
+    $(grep "# FindO2GPU.cmake Version " "$SOURCEDIR/dependencies/FindO2GPU.cmake" | awk '{print $4}') ]]; then
+  echo "FindO2GPU.cmake differs in O2 compared to alidist"
+  exit 1
 fi
 
 # Create code coverage information to be uploaded

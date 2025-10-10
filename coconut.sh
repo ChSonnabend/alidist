@@ -1,6 +1,6 @@
 package: coconut
 version: "%(tag_basename)s"
-tag: "v1.28.1"
+tag: "v1.44.0"
 build_requires:
   - golang
   - protobuf
@@ -18,7 +18,7 @@ mkdir -p $BUILD
 rsync -a --delete $SOURCEDIR/ $BUILD/
 pushd $BUILD
   make vendor
-  make WHAT="coconut peanut walnut"
+  make WHAT="coconut peanut"
   mkdir -p $INSTALLROOT/bin
   rsync -a --delete bin/ $INSTALLROOT/bin
   # safely clean up vendor directory regardless of permissions

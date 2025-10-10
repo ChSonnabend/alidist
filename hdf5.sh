@@ -1,6 +1,6 @@
 package: hdf5
-version: "1.10.9"
-tag: hdf5-1_10_9
+version: "1.14.6"
+tag: hdf5_1.14.6
 source: https://github.com/HDFGroup/hdf5.git
 requires:
   - "GCC-Toolchain:(?!osx)"
@@ -15,8 +15,9 @@ env:
 ---
 #!/bin/bash -e
   cmake "$SOURCEDIR"                             \
-    -DCMAKE_CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+    -DCMAKE_CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}" \
     -DCMAKE_INSTALL_PREFIX="$INSTALLROOT"        \
+    -DBUILD_TESTING=OFF                          \
     ${CXXSTD:+-DCMAKE_CXX_STANDARD=$CXXSTD}      \
     -DHDF5_BUILD_CPP_LIB=ON
 

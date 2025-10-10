@@ -1,6 +1,6 @@
-package: EPOS4
+package: EPOS4HQ
 version: "%(tag_basename)s"
-tag: "v4.0.3-alice3"
+tag: "v1.0hq-alice3"
 source: https://github.com/alisw/EPOS4.git
 requires:
   - ROOT
@@ -8,14 +8,14 @@ requires:
   - HepMC3
   - alibuild-recipe-tools
 env:
-  EPO4VSN: "4.0.3"
+  EPO4HQVSN: "1.0"
 ---
 #!/bin/bash -ex
 
 export CC=gcc
 export CXX=g++
 export FC=gfortran
-export COP=BASIC
+export COP=HQ
 
 export LIBRARY_PATH="$LD_LIBRARY_PATH"
 cmake -S ${SOURCEDIR} -DCMAKE_INSTALL_PREFIX=${INSTALLROOT} \
@@ -44,11 +44,11 @@ MODULEFILE="$MODULEDIR/$PKGNAME"
 mkdir -p "$MODULEDIR"
 alibuild-generate-module --lib --bin >$MODULEFILE
 cat >> "$MODULEFILE" <<EoF
-setenv EPOS4_ROOT \$PKG_ROOT
-setenv EPO4VSN 4.0.3
+setenv EPOS4HQ_ROOT \$PKG_ROOT
+setenv EPO4HQVSN 1.0
 # Final slash is required by EPOS, please leave it be
-setenv EPO4 \$PKG_ROOT/
-prepend-path PATH \$::env(EPO4)bin
+setenv EPO4HQ \$PKG_ROOT/
+prepend-path PATH \$::env(EPO4HQ)bin
 setenv OPT ./
 setenv HTO ./
 setenv CHK ./
