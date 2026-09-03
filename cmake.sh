@@ -1,6 +1,6 @@
 package: CMake
 version: "%(tag_basename)s"
-tag: "v4.1.4"
+tag: "v4.2.5"
 source: https://github.com/Kitware/CMake
 requires:
   - "OpenSSL:(?!osx)"
@@ -50,6 +50,14 @@ SET(BUILD_CursesDialog FALSE CACHE BOOL "" FORCE)
 EOF
 
 rsync -a --chmod=ugo=rwX --delete --exclude '**/.git' --delete-excluded $SOURCEDIR/ ./
+
+# On NFS/shared filesystems the bootstrap try-compile can emit GNU make
+# clock-skew warnings. CMake's feature probe treats any remaining warning text
+# as a failed C++ feature check, even when compilation and linking succeeded.
+sed -i '/Filter out ninja warnings\./a\
+    # Filter out GNU make clock-skew warnings.\
+    string(REGEX REPLACE "[^\\n]*(gmake|make)(\\\\[[0-9]+\\\\])?: [Ww]arning: File [^\\n]* has modification time [^\\n]* in the future" "" check_output "${check_output}")\
+    string(REGEX REPLACE "[^\\n]*(gmake|make)(\\\\[[0-9]+\\\\])?: [Ww]arning:  Clock skew detected\\.[^\\n]*" "" check_output "${check_output}")' Source/Checks/cm_cxx_features.cmake
 
 ./bootstrap --prefix=$INSTALLROOT \
                      ${ZLIB_ROOT:+--no-system-zlib} \

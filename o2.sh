@@ -27,6 +27,7 @@ requires:
   - "TGeo2VecGeom:(?!osx.*)"
   - FFTW3
   - ONNXRuntime
+  - ONNXRuntimeEPAMDGPU
   - nlohmann_json
   - MLModels
   - RapidJSON

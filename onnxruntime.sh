@@ -78,7 +78,10 @@ fi
 # Not gated on ORT_ROCM_BUILD: upstream removed the ROCm execution provider
 # after v1.22, so MIGraphX is the only remaining AMD path and has to stand on
 # its own. It needs hip and migraphx from the ROCm installation.
-if [[ ${O2_GPU_MIGRAPHX_AVAILABLE:-0} == 1 ]] && [[ -z "$ORT_MIGRAPHX_BUILD" ]]; then
+if [[ ${O2_GPU_MIGRAPHX_AVAILABLE:-0} != 1 ]] && [[ "$ORT_MIGRAPHX_BUILD" == 1 ]]; then
+  echo "Disabling ORT_MIGRAPHX_BUILD=1 because gpu-system reports O2_GPU_MIGRAPHX_AVAILABLE=${O2_GPU_MIGRAPHX_AVAILABLE:-unset}" >&2
+  ORT_MIGRAPHX_BUILD="0"
+elif [[ ${O2_GPU_MIGRAPHX_AVAILABLE:-0} == 1 ]] && [[ -z "$ORT_MIGRAPHX_BUILD" ]]; then
   ORT_MIGRAPHX_BUILD="1"
 elif [[ -z "$ORT_MIGRAPHX_BUILD" ]]; then
   ORT_MIGRAPHX_BUILD="0"
@@ -95,6 +98,40 @@ elif [[ -z "$ORT_TENSORRT_BUILD" ]]; then
   ORT_TENSORRT_BUILD="0"
 fi
 
+# MIGraphX installs into a self-contained prefix under lib/ on ROCm 6.x
+# (/opt/rocm/lib/migraphx/include/migraphx/version.h), which is on no default
+# include path: onnxruntime's provider then fails on <migraphx/version.h> even
+# though find_package(migraphx) succeeded. Find the prefix and pass it, rather
+# than assuming the headers sit beside ROCm's own.
+MIGRAPHX_HOME=
+if [[ "$ORT_MIGRAPHX_BUILD" == 1 ]]; then
+  for _p in "${O2_GPU_ROCM_HOME:-/opt/rocm}/lib/migraphx" "${O2_GPU_ROCM_HOME:-/opt/rocm}"; do
+    if [[ -f "$_p/include/migraphx/version.h" ]]; then
+      MIGRAPHX_HOME=$_p
+      break
+    fi
+  done
+  if [[ -z "$MIGRAPHX_HOME" ]]; then
+    echo "Disabling ORT_MIGRAPHX_BUILD=1 because MIGraphX headers were not found" >&2
+    ORT_MIGRAPHX_BUILD="0"
+  else
+    MIGRAPHX_MISSING_TYPES=()
+    for _type in migraphx_shape_bf16_type migraphx_shape_fp8e5m2fnuz_type migraphx_shape_fp4x2_type; do
+      if ! grep -R -q "$_type" "$MIGRAPHX_HOME/include/migraphx"; then
+        MIGRAPHX_MISSING_TYPES+=("$_type")
+      fi
+    done
+    if [[ ${#MIGRAPHX_MISSING_TYPES[@]} -ne 0 ]]; then
+      echo "Disabling ORT_MIGRAPHX_BUILD=1 because MIGraphX headers are too old for ONNXRuntime $PKGVERSION: ${MIGRAPHX_MISSING_TYPES[*]}" >&2
+      ORT_MIGRAPHX_BUILD="0"
+      MIGRAPHX_HOME=
+    else
+      CXXFLAGS="$CXXFLAGS -isystem $MIGRAPHX_HOME/include"
+    fi
+  fi
+  echo "MIGRAPHX_HOME=${MIGRAPHX_HOME:-<not found>}"
+fi
+
 mkdir -p $INSTALLROOT/etc
 cat << EOF > $INSTALLROOT/etc/ort-init.sh
 export ORT_ROCM_BUILD=$ORT_ROCM_BUILD
@@ -102,22 +139,6 @@ export ORT_CUDA_BUILD=$ORT_CUDA_BUILD
 export ORT_MIGRAPHX_BUILD=$ORT_MIGRAPHX_BUILD
 export ORT_TENSORRT_BUILD=$ORT_TENSORRT_BUILD
 EOF
-
-# MIGraphX installs into a self-contained prefix under lib/ on ROCm 6.x
-# (/opt/rocm/lib/migraphx/include/migraphx/version.h), which is on no default
-# include path: onnxruntime's provider then fails on <migraphx/version.h> even
-# though find_package(migraphx) succeeded. Find the prefix and pass it, rather
-# than assuming the headers sit beside ROCm's own.
-if [[ "$ORT_MIGRAPHX_BUILD" == 1 ]]; then
-  for _p in "${O2_GPU_ROCM_HOME:-/opt/rocm}/lib/migraphx" "${O2_GPU_ROCM_HOME:-/opt/rocm}"; do
-    if [[ -f "$_p/include/migraphx/version.h" ]]; then
-      MIGRAPHX_HOME=$_p
-      CXXFLAGS="$CXXFLAGS -isystem $_p/include"
-      break
-    fi
-  done
-  echo "MIGRAPHX_HOME=${MIGRAPHX_HOME:-<not found>}"
-fi
 
 echo "O2_GPU_ROCM_HOME=$O2_GPU_ROCM_HOME"
 echo "O2_GPU_CUDA_HOME=$O2_GPU_CUDA_HOME"
@@ -141,7 +162,7 @@ cmake "cmake"                                                                   
       -Dsafeint_SOURCE_DIR=${SAFE_INT_ROOT}/include                                                         \
       -Deigen_SOURCE_PATH=${EIGEN3_ROOT}/include/eigen3                                                     \
       -DCMAKE_IGNORE_PATH=/opt/homebrew/include                                                             \
-      -DGIT_EXECUTABLE=$(type git)                                                                          \
+      -DGIT_EXECUTABLE="$(command -v git)"                                                                 \
       -Donnxruntime_BUILD_UNIT_TESTS=OFF                                                                    \
       -Donnxruntime_USE_PREINSTALLED_EIGEN=ON                                                               \
       -Donnxruntime_BUILD_BENCHMARKS=OFF                                                                    \
