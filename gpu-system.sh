@@ -42,8 +42,8 @@ prefer_system_check: |
 
     if [[ ${ALIBUILD_O2_FORCE_GPU} == "build" ]]; then
       GPU_FEATURES=build-from-alidist
-      [[ -n $ALIBUILD_O2_FORCE_GPU_CUDA_ARCH ]] && add_feature _ cudaarch@$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${ALIBUILD_O2_FORCE_GPU_CUDA_ARCH}")@
-      [[ -n $ALIBUILD_O2_FORCE_GPU_HIP_ARCH ]] && add_feature _ rocmarch@$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${ALIBUILD_O2_FORCE_GPU_HIP_ARCH}")@
+      [[ -n $ALIBUILD_O2_FORCE_GPU_CUDA_ARCH ]] && add_feature _ cudaarch.$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${ALIBUILD_O2_FORCE_GPU_CUDA_ARCH}").
+      [[ -n $ALIBUILD_O2_FORCE_GPU_HIP_ARCH ]] && add_feature _ rocmarch.$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${ALIBUILD_O2_FORCE_GPU_HIP_ARCH}").
       break
     fi
 
@@ -177,14 +177,14 @@ prefer_system_check: |
     if [[ $GPU_CUDA_ENABLED == 1 ]]; then
       add_feature - cuda
       [[ -n $GPU_CUDA_VERSION ]] && add_feature _ ${GPU_CUDA_VERSION//-/_}
-      [[ -n $GPU_CUDA_ARCHITECTURE ]] && add_feature _ arch@$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${GPU_CUDA_ARCHITECTURE}")@
+      [[ -n $GPU_CUDA_ARCHITECTURE ]] && add_feature _ arch.$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${GPU_CUDA_ARCHITECTURE}").
       [[ -n $O2_GPU_CUDA_HOME ]] && add_feature _ "home_$(base32 -i -w0 <<< "${O2_GPU_CUDA_HOME}" | tr '=' '0')"
     fi
 
     if [[ $GPU_HIP_ENABLED == 1 ]]; then
       add_feature - rocm
       [[ -n $GPU_HIP_VERSION ]] && add_feature _ ${GPU_HIP_VERSION//-/_}
-      [[ -n $GPU_HIP_ARCHITECTURE ]] && add_feature _ arch@$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${GPU_HIP_ARCHITECTURE}")@
+      [[ -n $GPU_HIP_ARCHITECTURE ]] && add_feature _ arch.$(sed -e "s/;/#/g" -e "s/-/_/g" <<< "${GPU_HIP_ARCHITECTURE}").
       [[ -n $O2_GPU_ROCM_HOME ]] && add_feature _ "home_$(base32 -i -w0 <<< "${O2_GPU_ROCM_HOME}" | tr '=' '0')"
     fi
 
@@ -315,10 +315,10 @@ prefer_system_replacement_specs:
         echo "export O2_GPU_MIGRAPHX_AVAILABLE=\"$( ( [[ "$PKG_VERSION" =~ (^|-)migraphx(-|_|$) ]] && echo 1 ) || echo 0 )\""
         echo "export O2_GPU_TENSORRT_AVAILABLE=\"$( ( [[ "$PKG_VERSION" =~ (^|-)tensorrt(-|_|$) ]] && echo 1 ) || echo 0 )\""
 
-        [[ "$PKG_VERSION" =~ (^|-)cuda([^-]*)_home_([^@]*)(-|_|$) ]] && echo 'export O2_GPU_CUDA_HOME="'$(tr '0' '=' <<< "${BASH_REMATCH[3]}" | base32 -d 2> /dev/null)'"'
-        [[ "$PKG_VERSION" =~ (^|-)rocm([^-]*)_home_([^@]*)(-|_|$) ]] && echo 'export O2_GPU_ROCM_HOME="'$(tr '0' '=' <<< "${BASH_REMATCH[3]}" | base32 -d 2> /dev/null)'"'
-        [[ "$PKG_VERSION" =~ (^|-)cuda([^-]*)_arch@([^@]*)@(-|_|$) ]] && echo 'export O2_GPU_CUDA_AVAILABLE_ARCH="'$(sed -e 's/#/;/g' -e 's/_/-/g' <<< "${BASH_REMATCH[3]}" 2> /dev/null)'"'
-        [[ "$PKG_VERSION" =~ (^|-)rocm([^-]*)_arch@([^@]*)@(-|_|$) ]] && echo 'export O2_GPU_ROCM_AVAILABLE_ARCH="'$(sed -e 's/#/;/g' -e 's/_/-/g' <<< "${BASH_REMATCH[3]}" 2> /dev/null)'"'
+        [[ "$PKG_VERSION" =~ (^|-)cuda([^-]*)_home_([^-_]*)(-|_|$) ]] && echo 'export O2_GPU_CUDA_HOME="'$(tr '0' '=' <<< "${BASH_REMATCH[3]}" | base32 -d 2> /dev/null)'"'
+        [[ "$PKG_VERSION" =~ (^|-)rocm([^-]*)_home_([^-_]*)(-|_|$) ]] && echo 'export O2_GPU_ROCM_HOME="'$(tr '0' '=' <<< "${BASH_REMATCH[3]}" | base32 -d 2> /dev/null)'"'
+        [[ "$PKG_VERSION" =~ (^|-)cuda([^-]*)_arch\.([^.]*)\.(-|_|$) ]] && echo 'export O2_GPU_CUDA_AVAILABLE_ARCH="'$(sed -e 's/#/;/g' -e 's/_/-/g' <<< "${BASH_REMATCH[3]}" 2> /dev/null)'"'
+        [[ "$PKG_VERSION" =~ (^|-)rocm([^-]*)_arch\.([^.]*)\.(-|_|$) ]] && echo 'export O2_GPU_ROCM_AVAILABLE_ARCH="'$(sed -e 's/#/;/g' -e 's/_/-/g' <<< "${BASH_REMATCH[3]}" 2> /dev/null)'"'
         true
       } > "$INSTALLROOT"/etc/gpu-features-available.sh
 ---
